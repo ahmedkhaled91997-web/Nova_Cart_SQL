@@ -1,0 +1,68 @@
+--Design Reasoning Questions Answer briefly in your own words. These questions test database reasoning, not SQL syntax. 
+--Q1. Why is an intermediate table needed between Orders and Products? 
+--A1 جدول الطلبات و المنتجات العلاقه بينهم هي مني<-->مني 
+--A1 حيث يمكن للمنتج ان يتم طلبه من اكثر من شخص و يمكن للشخص ان يطلب اكثر من منتج 
+--A1 لذالك يحتاج جدول وسيط لتقسم البيانات الي 1->م او م->1
+--//////////////////////////////////////////////
+--Q2. Why should quantity be stored for an order-product combination rather than in Products?
+--A2 اذا قمت بتسجيل الكميه المطلوبه في جدول المنتج منطقيا سيتم فهمها ك الكميه المتوفره في المخزن 
+--A2 و بما انها صفه او فعل يخص الاوردر من الافضل تخزينها في جدول يقوم ب تخزين تفاصيل الاوردال به
+--//////////////////////////////////////////////
+--Q3. Why should unit_price be stored in order details instead of relying only on the current Products.price? 
+--A3 من الطبيعي تغير اسعار المنتج في اي وقت. حيث يمكن ان يزيد سعره او ينخفض
+--A3 و في هذه الحاله اذا قام العميل بشراء اوردار و تغير سعره لاحقا يجب ان يتم تسجيل سعر الشراء وليس سعر المنتج 
+--A3 لذالك اعتمدنا علي فيتشر يتم تخزين سعر الشراء للعميل فيها
+--//////////////////////////////////////////////
+--Q4. Why should order status be restricted to the four business-defined values? 
+--A4 لان هذه القيم هي التي حددتها الشركه 
+--A4 *_*
+--//////////////////////////////////////////////
+--Q5. Why is order_id required to be unique in Payments if each order has exactly one payment? 
+--A5 حتي لا تتم عمليات دفع متكرره لنفس الطلب
+--//////////////////////////////////////////////
+--َQ6. Which business rules can be enforced directly with common relational constraints, and which review rule may require additional logic? 
+--A6 كل القيود تقريبا كان اضافتها سهل في عمليه انشاء الجدول عدا قيدين 
+--Constraints1 : جعل النظام يسجل السعر الذي اشتري به العميل 
+--Constraints1 Solve : تطلب ذالك انشاء triggir 
+------------
+--Constraints2 : عدم السماح للعميل بتقيم المنتج اذا لم يقم بشرائه 
+--Constraints2 Solve : يمكن فعل ذالك بأكثر من طريقه ولاكن الاسهل بالنسبه لي كان
+-- اضافه رقم العميل في جدول تفاصيل الاوردار كعمود اساسي و اضافته في جدول التقيمات كعمود فرعي 
+-- للتحقق ما اذا كن رقم العميل موجود في جدول  تفاصيل الاوردار سيتم السماح له بالتقيم
+--//////////////////////////////////////////////--//////////////////////////////////////////////
+--//////////////////////////////////////////////--//////////////////////////////////////////////
+--10. SQL Reasoning & Quality Checks Before considering your work complete,
+--    review your queries and database design using the questions below. 
+
+--Q1. Which of your queries require GROUP BY? Why? 
+--A1 تستخدم جروب باي في الاستعلامات لتجميع بيانات عمود معين بدل من ظهور نفس القيمه اكثر من مره
+--ِA1 قمت بستخدامها اكثر من مره لعرض اسماء العملاء + قيمه المدفوعات لكل عميل مجمعه 
+--ِA1 اغلب استخدامها كان في الاستعلامات التي تحتوي علي حمليات حسابيه بشكل عام 
+--//////////////////////////////////////////////--//////////////////////////////////////////////
+--Q2. Which queries require HAVING rather than WHERE? Explain the difference using one of your solutions. 
+--A2 يستخدم الاثنين لوضع شروط علي الاستعلام ولاكن الفرق 
+--A2 ان  (هوير) تعمل علي الاستعلام بشكل عام اما (هافينج) تعمل علي العمليات الحسابيه او الجروب باي
+--A2 يمكن استخدام الاثنين في نفس الاستعلام ستعمل هافينك و تستخرج القيمه المطلويه و تعمل هوير علي هذه القيم (قيمه هافينج) 2
+--//////////////////////////////////////////////--//////////////////////////////////////////////
+--Q3. Which questions require a LEFT JOIN because rows with no matching records must still appear? 
+--A3. Display the number of reviews received by each product, including products with no reviews. 
+--C عرض جميع المنتجات التي حصلت علي تقيم و التي لم تحصل عليه 
+--A3. Display all reviews together with the customer name and product name.
+--C عرض جميع العملاء و اسم المنتج و التعليق لكل العملاء 
+--//////////////////////////////////////////////--//////////////////////////////////////////////
+--Q4. Where could duplicate rows be introduced by a join? How did you make sure your aggregation remains correct? 
+	select FullName,count(distinct o.OrderID) as OrderCount,
+	isnull(sum(Quantity * UnitPrice),0) as TotalRevenue,c.CustomerID
+	from Customers c join Orders o on c.CustomerID=o.CustomerID
+	join Orders_Details od on od.OrderID=o.OrderID
+	group by FullName , c.CustomerID
+--A4 في هذا الاستعلام اذا تم الربط بطريقه غير صحيحه ستختلف المخرجات و يظهر صفوف مكرره
+--A4 يمكن التأكد من العمليه الحسابيه عن طريق فتح الجداول بطريقه يدويه و التأكد او اضاقه استعلام لربط الجداول ببعضها و التأكد 
+--//////////////////////////////////////////////--//////////////////////////////////////////////
+--Q5. Why should revenue calculations for an order use OrderDetails.unit_price rather than Products.price? 
+--A5 اذا قمت العمليه الحسابيه عن طريق سعر المنتج ف انا اقوم بحساب رأس المال او قيمه المنتجاب المخزن 
+--A5 ولاكن عن طريق سعر الوحده في جدول تفاصيل الاوردار ف انا احسب قيمه المنتجات المباعه و هذه المطلوب لحساب العائد
+--//////////////////////////////////////////////--//////////////////////////////////////////////
+--Q6. Why are both RANK() and DENSE_RANK() included in this lab? Describe the difference when ties occur.
+--A6 (rank) تقوم بأنشاء عمود و تبدأ بوضع قيم لكل منتج مثلا اذا وجدت قيم متشابهه تضع نفس الرقم مثال : 1-1-3-3-5
+--A6 (DENSE_RANK) نفس  طريقه عمل ال رانك ولاكنها لا تنتقي الي رقم 3 مباشراً  مثال : 1-1-2-3
